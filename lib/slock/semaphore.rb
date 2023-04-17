@@ -18,7 +18,7 @@ module Slock
     #
     def initialize(key, opts = {})
       @key = key
-      @client = ConnectionPool::Wrapper.new(size: 50) { opts.delete(:redis) || Redis.new }
+      @client = opts.delete(:redis) || Redis.new
       @size = opts.delete(:size) || 1
       @opts = opts
 
