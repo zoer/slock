@@ -4,9 +4,7 @@ module Slock
       extend Forwardable
 
       attr_reader :id
-      attr_reader :semaphore
-      attr_reader :token
-      attr_reader :lifetime
+      attr_reader :semaphore, :token, :lifetime
 
       def_delegators :semaphore, :key, :client, :tokens_path
 
@@ -21,7 +19,7 @@ module Slock
         @semaphore = semaphore
         @token = token
         @id = SecureRandom.uuid
-        @lifetime = opts.delete(:lifetime) || 10*60
+        @lifetime = opts.delete(:lifetime) || (10 * 60)
       end
 
       #
@@ -37,7 +35,7 @@ module Slock
 
         new(semaphore, token, opts).tap(&:lock)
       rescue Redis::TimeoutError, Errors::WrongLockOwnerError,
-          Errors::TokenOutOffSemaphoreSizeError
+             Errors::TokenOutOffSemaphoreSizeError
 
         retry
       end
@@ -76,6 +74,7 @@ module Slock
       def owned?(allow_empty = false)
         owner = client.get(id_path)
         return true if owner.nil? && allow_empty
+
         owner == id
       end
 
@@ -86,6 +85,7 @@ module Slock
       #
       def check_owner!(allow_empty = false)
         return if owned?(allow_empty)
+
         raise Errors::WrongLockOwnerError, token
       end
 
@@ -106,11 +106,11 @@ module Slock
         end
       end
 
-      def change(&block)
+      def change
         return yield if @changable
 
         begin
-          sleep(0.1) while !client.set(lock_path, 1, nx: true, ex: 3)
+          sleep(0.1) until client.set(lock_path, 1, nx: true, ex: 3)
           @changable = true
 
           yield

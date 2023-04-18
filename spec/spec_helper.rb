@@ -5,8 +5,8 @@ require 'timecop'
 require 'byebug'
 
 $VERBOSE = nil
-root = File.expand_path('../..', __FILE__)
-Dir[File.join(root, 'spec/support/**/*.rb')].each { |f| require f }
+root = File.expand_path('..', __dir__)
+Dir[File.join(root, 'spec/support/**/*.rb')].sort.each { |f| require f }
 
 RSpec::Matchers.define_negated_matcher :avoid_changing, :change
 
@@ -23,7 +23,6 @@ RSpec.configure do |config|
   end
 
   config.shared_context_metadata_behavior = :apply_to_host_groups
-
 
   config.filter_run_when_matching :focus
   config.order = :random

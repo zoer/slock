@@ -2,8 +2,8 @@ RSpec.describe Slock::Semaphore do
   let(:opts) { { redis: redis, lifetime: 10, size: size, timeout: lock_timeout } }
   let(:lifetime) { 10 }
   let(:lock_timeout) { 0.4 }
-  let(:semaphore) { Slock::Semaphore.new(key, opts) }
-  let(:same_semaphore) { Slock::Semaphore.new(key, opts) }
+  let(:semaphore) { described_class.new(key, opts) }
+  let(:same_semaphore) { described_class.new(key, opts) }
   let(:size) { 3 }
   let(:key) { SecureRandom.uuid }
   let(:token) { rand(0..10).to_s }
@@ -24,7 +24,7 @@ RSpec.describe Slock::Semaphore do
   it '#initialize_semaphore' do
     expect { semaphore }.to \
       change { redis.lrange("#{key}:tokens", 0, -1)&.sort }.from([]).to(size.times.map(&:to_s)).and \
-      change { redis.get("#{key}:init") }.from(nil).to('1')
+        change { redis.get("#{key}:init") }.from(nil).to('1')
 
     same_semaphore
   end
@@ -38,13 +38,13 @@ RSpec.describe Slock::Semaphore do
         receive(:check_health!).at_least(size).at_least(size).times.and_call_original
     end
 
-    it 'should acquire and release the locks' do
+    it 'acquires and release the locks' do
       timeout_reached = nil
 
       test_lock = proc do |lock|
-        expect(lock.live?).to eq true
-        expect(lock.owned?).to eq true
-        expect(lock.locked?).to eq true
+        expect(lock.live?).to be true
+        expect(lock.owned?).to be true
+        expect(lock.locked?).to be true
         expect(lock.client.lrange(lock.semaphore.tokens_path, 0, -1)).not_to \
           include(lock.token)
       end
@@ -58,8 +58,8 @@ RSpec.describe Slock::Semaphore do
 
             expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to eq([])
 
-            semaphore.acquire do |l2|
-              raise "Never should be acquired!"
+            semaphore.acquire do |_l2|
+              raise 'Never should be acquired!'
             end
           rescue Slock::Errors::TimeoutError
             timeout_reached = true
@@ -86,7 +86,7 @@ RSpec.describe Slock::Semaphore do
         redis.rpush(semaphore.tokens_path, size + 1)
       end
 
-      it 'should autofix tokens size' do
+      it 'autofixes tokens size' do
         res = 0
         5.times do
           semaphore.acquire { res += 1 }
@@ -111,18 +111,18 @@ RSpec.describe Slock::Semaphore do
         expect(missing.count).to eq 2
         missing.each do |n|
           lock = Slock::Semaphore::Lock.new(semaphore, n.to_s).tap(&:own)
-          expect(redis.exists?(lock.id_path)).to eq true
+          expect(redis.exists?(lock.id_path)).to be true
         end
       end
 
-      it 'should fix missing tokens' do
+      it 'fixes missing tokens' do
         expect { semaphore.check_health! }.to \
-          change { redis.llen(semaphore.tokens_path) }.from(size-2).to(size).and \
-          change { redis.lrange(semaphore.tokens_path, 0, -1).sort }.to(size.times.map(&:to_s))
+          change { redis.llen(semaphore.tokens_path) }.from(size - 2).to(size).and \
+            change { redis.lrange(semaphore.tokens_path, 0, -1).sort }.to(size.times.map(&:to_s))
 
         missing.each do |n|
           lock = Slock::Semaphore::Lock.new(semaphore, n.to_s)
-          expect(redis.exists?(lock.id_path)).to eq false
+          expect(redis.exists?(lock.id_path)).to be false
         end
       end
     end

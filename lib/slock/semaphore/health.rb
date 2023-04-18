@@ -11,7 +11,6 @@ module Slock
       # @return [Slock::Semaphore]
       attr_reader :semaphore
 
-
       #
       # @param [Slock::Semaphore] semaphore
       #

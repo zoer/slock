@@ -40,11 +40,12 @@ module Slock
     # @return [Slock::Semaphore::Lock] returns lock's handler when no block is provided
     # @return [Object] returns yielded block resulst when block is provided
     #
-    def acquire(opts = {}, &block)
+    def acquire(opts = {})
       check_health!
       opts = @opts.merge(opts)
       lock = opts[:timeout] ? acquire_timeout(opts) : acquire_notimeout(opts)
       return lock unless block_given?
+
       yield(lock) if lock.locked?
     ensure
       lock&.release if block_given?
@@ -58,7 +59,7 @@ module Slock
     # @return [Slock::Semaphore::Lock]
     #
     def acquire_timeout(opts = {})
-      Timeout::timeout(opts[:timeout]) { acquire_notimeout(opts) }
+      Timeout.timeout(opts[:timeout]) { acquire_notimeout(opts) }
     rescue Timeout::Error
       raise Errors::TimeoutError
     end
