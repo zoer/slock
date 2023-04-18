@@ -1,6 +1,8 @@
 module Slock
   module Errors
-    class TimeoutError < StandardError; end
-    class WrongLockOwnerError < StandardError; end
+    class BaseError < StandardError; end
+    class TimeoutError < BaseError; end
+    class WrongLockOwnerError < BaseError; end
+    class TokenOutOffSemaphoreSizeError < BaseError; end
   end
 end

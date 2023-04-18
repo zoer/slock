@@ -73,6 +73,30 @@ RSpec.describe Slock::Semaphore do
         expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to eq(size.times.map(&:to_s))
       end
     end
+
+    context 'when there are tokens out of semaphore pool size' do
+      let(:size) { 3 }
+
+      before do
+        expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to \
+          eq(size.times.map(&:to_s))
+
+        # add 2 additional tokens into the tokens pool
+        redis.lpush(semaphore.tokens_path, size)
+        redis.rpush(semaphore.tokens_path, size + 1)
+      end
+
+      it 'should autofix tokens size' do
+        res = 0
+        5.times do
+          semaphore.acquire { res += 1 }
+        end
+
+        expect(res).to eq 5
+        expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to \
+          eq(size.times.map(&:to_s))
+      end
+    end
   end
 
   describe '#check_health!' do

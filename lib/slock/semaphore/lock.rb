@@ -33,8 +33,12 @@ module Slock
 
       def self.lock(semaphore, opts = {})
         _, token = semaphore.client.blpop(semaphore.tokens_path, timeout: 0)
+        raise Errors::TokenOutOffSemaphoreSizeError if token.to_i >= semaphore.size
+
         new(semaphore, token, opts).tap(&:lock)
-      rescue Redis::TimeoutError, Errors::WrongLockOwnerError
+      rescue Redis::TimeoutError, Errors::WrongLockOwnerError,
+          Errors::TokenOutOffSemaphoreSizeError
+
         retry
       end
 
@@ -53,7 +57,7 @@ module Slock
       def _release
         client.del(id_path)
         client.del(live_path)
-        client.lpush(tokens_path, token)
+        client.rpush(tokens_path, token)
       end
 
       def renew
