@@ -41,6 +41,8 @@ RSpec/NestedGroups:
   Enabled: false
 RSpec/StubbedMock:
   Enabled: false
+RSpec/AnyInstance:
+  Enabled: false
 
 Gemspec/DeprecatedAttributeAssignment: # new in 1.30
   Enabled: true
