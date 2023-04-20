@@ -4,13 +4,14 @@ RSpec.describe Slock::Semaphore do
   let(:lock_timeout) { 0.4 }
   let(:semaphore) { described_class.new(key, opts) }
   let(:same_semaphore) { described_class.new(key, opts) }
+  let(:tokens_path) { semaphore.tokens_path }
   let(:size) { 3 }
   let(:key) { SecureRandom.uuid }
   let(:token) { rand(0..10).to_s }
   let(:now) { Time.now }
 
   it '#tokens_path' do
-    expect(semaphore.tokens_path).to eq("#{semaphore.key}:tokens")
+    expect(tokens_path).to eq("#{semaphore.key}:tokens")
   end
 
   it '#init_path' do
@@ -45,7 +46,7 @@ RSpec.describe Slock::Semaphore do
         expect(lock.live?).to be true
         expect(lock.owned?).to be true
         expect(lock.locked?).to be true
-        expect(lock.client.lrange(lock.semaphore.tokens_path, 0, -1)).not_to \
+        expect(lock.client.lrange(tokens_path, 0, -1)).not_to \
           include(lock.token)
       end
 
@@ -70,7 +71,7 @@ RSpec.describe Slock::Semaphore do
       3.times do
         timeout_reached = false
         expect { acquire.call }.to change { timeout_reached }.from(false).to(true)
-        expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to eq(size.times.map(&:to_s))
+        expect(redis.lrange(tokens_path, 0, -1).sort).to eq(size.times.map(&:to_s))
       end
     end
 
@@ -78,12 +79,12 @@ RSpec.describe Slock::Semaphore do
       let(:size) { 3 }
 
       before do
-        expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to \
+        expect(redis.lrange(tokens_path, 0, -1).sort).to \
           eq(size.times.map(&:to_s))
 
         # add 2 additional tokens into the tokens pool
-        redis.lpush(semaphore.tokens_path, size)
-        redis.rpush(semaphore.tokens_path, size + 1)
+        redis.lpush(tokens_path, size)
+        redis.rpush(tokens_path, size + 1)
       end
 
       it 'autofixes tokens size' do
@@ -93,7 +94,7 @@ RSpec.describe Slock::Semaphore do
         end
 
         expect(res).to eq 5
-        expect(redis.lrange(semaphore.tokens_path, 0, -1).sort).to \
+        expect(redis.lrange(tokens_path, 0, -1).sort).to \
           eq(size.times.map(&:to_s))
       end
     end
@@ -106,7 +107,7 @@ RSpec.describe Slock::Semaphore do
 
       before do
         semaphore # initalize semaphore
-        2.times { missing << redis.lpop(semaphore.tokens_path) }
+        2.times { missing << redis.lpop(tokens_path) }
 
         expect(missing.count).to eq 2
         missing.each do |n|
@@ -116,9 +117,10 @@ RSpec.describe Slock::Semaphore do
       end
 
       it 'fixes missing tokens' do
+        expect_any_instance_of(Slock::Semaphore::Health).to receive(:check).and_call_original
         expect { semaphore.check_health! }.to \
-          change { redis.llen(semaphore.tokens_path) }.from(size - 2).to(size).and \
-            change { redis.lrange(semaphore.tokens_path, 0, -1).sort }.to(size.times.map(&:to_s))
+          change { redis.llen(tokens_path) }.from(size - 2).to(size).and \
+            change { redis.lrange(tokens_path, 0, -1).sort }.to(size.times.map(&:to_s))
 
         missing.each do |n|
           lock = Slock::Semaphore::Lock.new(semaphore, n.to_s)
