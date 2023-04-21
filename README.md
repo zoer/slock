@@ -1,7 +1,5 @@
 # Slock
-[![Build Status](https://travis-ci.org/zoer/slock.svg)](https://travis-ci.org/zoer/slock)
 [![Code Climate](https://codeclimate.com/github/zoer/slock/badges/gpa.svg)](https://codeclimate.com/github/zoer/slock)
-[![Version Eye](https://www.versioneye.com/ruby/slock/badge.png)](https://www.versioneye.com/ruby/slock)
 [![Inline docs](http://inch-ci.org/github/zoer/slock.png)](http://inch-ci.org/github/zoer/slock)
 [![Gem Version](https://badge.fury.io/rb/slock.svg)](http://badge.fury.io/rb/slock)
 
