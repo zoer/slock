@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.license     = 'MIT'
   s.required_ruby_version = '>= 2.6.0'
 
-  s.add_dependency 'redis'
+  s.add_dependency 'redis', '>= 4.0'
 
   s.metadata['rubygems_mfa_required'] = 'true'
 end

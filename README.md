@@ -47,5 +47,5 @@ sempahore = Slock::Semaphore.new 'uniq_semaphore_key',
   lifetime: 600,
   timeout: 900
 
-semaphroe.acquire { do_something }
+semaphore.acquire { do_something }
 ```
