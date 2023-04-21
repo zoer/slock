@@ -51,4 +51,27 @@ RSpec.describe Slock::Semaphore::Health do
       end
     end
   end
+
+  describe '#check!' do
+    it 'calls the check method when lock is acquired' do
+      expect(health).to receive(:lock).and_return(true)
+      expect(health).to receive(:check).once
+
+      health.check!
+    end
+
+    it 'does not call the check method when lock is not acquired' do
+      expect(health).to receive(:lock).and_return(false)
+      expect(health).not_to receive(:check)
+
+      health.check!
+    end
+  end
+
+  it '#lock' do
+    expect(health.lock).to be true
+
+    expect { redis.del(health.healthlock_path) }.to \
+      change(health, :lock).from(false).to(true)
+  end
 end
